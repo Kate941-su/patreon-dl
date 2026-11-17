@@ -45,6 +45,7 @@ npm start -- "https://www.patreon.com/<クリエイター名>/posts"
 ```
 
 1. Chrome が開きます。Patreon にログインしてください（Google ログインも使えます）。
+   YouTube の動画を埋め込んだ投稿がある場合は、別のタブで https://www.youtube.com にもログインしてください（初回のみ）。
 2. 投稿一覧ページが表示されたら、ターミナルで **Enter** を押します。
 3. 自動でスクロールして投稿 URL を集め、そのままダウンロードが始まります。
 
@@ -121,6 +122,7 @@ npm run download -- "collections/<コレクション名>"
 | URL が 0 件になる | 投稿一覧ページを開いた状態で Enter を押しているか確認する |
 | `You do not have access to this post` | ログインしているか、その投稿にアクセスできるプランに加入しているか確認する。もう一度 `npm run urls` を実行して Cookie を取り直す |
 | Google ログインで「This browser may not be secure」と出る | Patreon のメールアドレスとパスワードでログインする |
+| `Sign in to confirm you're not a bot` | YouTube 埋め込みの投稿で、YouTube にロボットと疑われています。開いた Chrome で YouTube にログインし、もう一度 `npm run urls` を実行して Cookie を取り直す（実行時に「YouTube にログインしていません」と出ないことを確認）。メインの Google アカウントを使いたくない場合はサブアカウントでも可 |
 | `Google Chrome が見つかりません` | Chrome をインストールするか、`CHROME_PATH` を指定する |
 | `yt-dlp を起動できません` | yt-dlp をインストールし、PATH に通す |
 | 別の PC にコピーしたらログインが切れている | `chrome-profile/` は OS をまたいで使えません。もう一度 `npm run urls` でログインし直す |

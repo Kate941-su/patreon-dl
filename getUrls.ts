@@ -34,7 +34,17 @@ function waitForEnter(message: string) {
 
 // yt-dlp が読める Netscape 形式で Cookie を書き出す
 async function saveCookies(context: BrowserContext, filePath: string) {
-  const cookies = (await context.cookies()).filter((c) => c.domain.includes('patreon.com'));
+  // YouTube 埋め込みの投稿は yt-dlp が YouTube から取得するため、YouTube の Cookie も書き出す
+  // （ログインしていないと「Sign in to confirm you're not a bot」で止まる）
+  const isTarget = (domain: string) => /(^|\.)(patreon\.com|youtube\.com)$/.test(domain);
+  const cookies = (await context.cookies()).filter((c) => isTarget(c.domain));
+  const youtubeLoggedIn = cookies.some((c) => c.domain.endsWith('youtube.com') && c.name === 'SAPISID');
+  if (!youtubeLoggedIn) {
+    console.warn(
+      '注意: YouTube にログインしていません。YouTube 埋め込みの投稿は「not a bot」エラーで失敗することがあります。\n' +
+        '      開いた Chrome で https://www.youtube.com にログインしてから、もう一度実行してください。'
+    );
+  }
   const lines = cookies.map((c) =>
     [
       c.domain,
@@ -142,7 +152,8 @@ export async function getUrls(targetUrl: string): Promise<string> {
     // 1. ログイン
     await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
     await waitForEnter(
-      `---\n開いた Chrome で Patreon にログインし、${collectionId ? 'コレクション' : '投稿一覧'}ページが表示されたらこのターミナルで Enter を押してください\n---`
+      `---\n開いた Chrome で Patreon にログインし、${collectionId ? 'コレクション' : '投稿一覧'}ページが表示されたらこのターミナルで Enter を押してください\n` +
+        '（YouTube 埋め込みの動画もある場合は、別タブで https://www.youtube.com にもログインしておいてください）\n---'
     );
 
     // 2. Cookie 保存
