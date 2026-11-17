@@ -1,0 +1,13 @@
+# ログイン情報（絶対にコミットしない）
+chrome-profile/
+cookies.txt
+
+# 特定のクリエイターに紐づくデータ・ダウンロードした動画
+urls.txt
+archive.txt
+collections/
+[0-9][0-9][0-9][0-9]/
+
+# その他
+node_modules/
+.DS_Store

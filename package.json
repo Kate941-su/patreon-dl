@@ -1,0 +1,22 @@
+{
+  "name": "patoreon-dl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "run.ts",
+  "scripts": {
+    "start": "tsx run.ts",
+    "urls": "tsx getUrls.ts",
+    "download": "tsx download.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "^1.65.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15"
+  }
+}
