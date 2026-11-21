@@ -27,7 +27,8 @@ export function download(dir = '.') {
     console.log(`Downloading: ${url}`);
     const result = spawnSync(
       'yt-dlp',
-      ['--cookies', COOKIE_FILE, '--download-archive', ARCHIVE_FILE, '--output', path.join(dir, OUTPUT), url],
+      // YouTube の JS チャレンジ解読に Node.js を使う（yt-dlp は uv tool install "yt-dlp[default]" で入れる）
+      ['--js-runtimes', 'node', '--cookies', COOKIE_FILE, '--download-archive', ARCHIVE_FILE, '--output', path.join(dir, OUTPUT), url],
       { stdio: 'inherit' }
     );
     if (result.error) {

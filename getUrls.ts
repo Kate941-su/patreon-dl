@@ -65,9 +65,42 @@ async function saveCookies(context: BrowserContext, filePath: string) {
 
 export const usage =
   '使い方: npm run urls -- "https://www.patreon.com/<クリエイター名>/posts"\n' +
-  '        npm run urls -- "https://www.patreon.com/collection/<コレクションID>"';
+  '        npm run urls -- "https://www.patreon.com/collection/<コレクションID>"\n' +
+  '        npm run urls -- "https://www.patreon.com/<クリエイター名>/posts" --tag <タグ名>';
+
+/**
+ * コマンドライン引数から対象 URL を作る。
+ * --tag <タグ名>（または --tag=<タグ名>）があれば投稿一覧 URL に ?filters[tag]=<タグ名> を付ける。
+ */
+export function parseArgs(argv: string[]): string | undefined {
+  let url: string | undefined;
+  let tag: string | undefined;
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--tag' || a === '-t') tag = argv[++i];
+    else if (a.startsWith('--tag=')) tag = a.slice('--tag='.length);
+    else if (!url) url = a;
+  }
+  if (!url) return undefined;
+  if (tag === undefined) return url;
+  if (!tag) throw new Error('--tag にタグ名を指定してください');
+  const u = new URL(url);
+  if (COLLECTION_URL.test(u.href)) throw new Error('--tag は投稿一覧の URL と一緒に使ってください');
+  if (!u.pathname.includes('/posts')) u.pathname = u.pathname.replace(/\/?$/, '/posts');
+  u.searchParams.set('filters[tag]', tag);
+  return u.href;
+}
 
 const COLLECTION_URL = /^https:\/\/(?:www\.)?patreon\.com\/collection\/(\d+)/;
+
+// 投稿一覧のタグ絞り込み (?filters[tag]=<タグ名>) のタグ名を取り出す
+function tagFilterOf(url: string) {
+  try {
+    return new URL(url).searchParams.get('filters[tag]') || undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 // フォルダ名に使えない文字を置き換える（Windows でも使える名前にする）
 function safeDirName(name: string) {
@@ -76,7 +109,10 @@ function safeDirName(name: string) {
 
 // 投稿一覧ページをスクロール／「もっと見る」を押して全投稿の ID を集める
 async function collectFromPostsPage(page: Page, creatorPostsUrl: string) {
-  if (!page.url().includes('/posts')) await page.goto(creatorPostsUrl, { waitUntil: 'domcontentloaded' });
+  // 投稿一覧以外にいる、またはタグの絞り込みが違うときは指定の URL を開き直す
+  if (!page.url().includes('/posts') || tagFilterOf(page.url()) !== tagFilterOf(creatorPostsUrl)) {
+    await page.goto(creatorPostsUrl, { waitUntil: 'domcontentloaded' });
+  }
   console.log('投稿を読み込み中...');
   const collect = () =>
     page.$$eval('a[href*="/posts/"]', (anchors) => anchors.map((a) => (a as HTMLAnchorElement).href));
@@ -125,10 +161,11 @@ async function collectFromCollection(page: Page, collectionId: string) {
 
 /**
  * ログインして Cookie と投稿 URL を保存する。
- * 戻り値はダウンロード先フォルダ（投稿一覧なら "."、コレクションなら "collections/<名前>"）。
+ * 戻り値はダウンロード先フォルダ（投稿一覧なら "."、コレクションなら "collections/<名前>"、タグ絞り込みなら "tags/<タグ名>"）。
  */
 export async function getUrls(targetUrl: string): Promise<string> {
   const collectionId = targetUrl.match(COLLECTION_URL)?.[1];
+  const tag = collectionId ? undefined : tagFilterOf(targetUrl);
 
   // Playwright が起動したブラウザだと Google ログインが「This browser may not be secure」で弾かれるため、
   // 通常の Chrome を起動し、Playwright は CDP 経由で接続するだけにする。
@@ -169,6 +206,10 @@ export async function getUrls(targetUrl: string): Promise<string> {
       outDir = path.join('collections', col.title);
     } else {
       ids = await collectFromPostsPage(page, targetUrl);
+      if (tag) {
+        outDir = path.join('tags', safeDirName(tag) || 'tag');
+        console.log(`タグ「${tag}」: ${ids.length} 件`);
+      }
     }
 
     const urls = ids.map((id) => `https://www.patreon.com/posts/${id}`);
@@ -185,7 +226,13 @@ export async function getUrls(targetUrl: string): Promise<string> {
 }
 
 if (require.main === module) {
-  const targetUrl = process.argv[2];
+  let targetUrl: string | undefined;
+  try {
+    targetUrl = parseArgs(process.argv.slice(2));
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : e);
+    process.exit(1);
+  }
   if (!targetUrl) {
     console.error(usage);
     process.exit(1);

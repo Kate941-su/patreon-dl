@@ -89,6 +89,21 @@ npm run download -- "collections/<コレクション名>"
 
 > 投稿一覧（`/posts`）とは別に記録するので、すでに投稿一覧でダウンロードした動画もコレクションのフォルダにもう一度保存されます。
 
+### タグで絞り込んでダウンロード
+
+`--tag` でタグ名を指定すると、そのタグの付いた投稿だけをダウンロードします。
+
+```bash
+npm start -- "https://www.patreon.com/<クリエイター名>/posts" --tag インサイドキャンピング
+```
+
+Patreon で絞り込んだ URL（`.../posts?filters%5Btag%5D=...`）をそのまま渡しても同じです。
+`tags/<タグ名>/` に保存し、`urls.txt` と `archive.txt` もタグごとに作ります。続きからダウンロードし直すときは次のとおりです。
+
+```bash
+npm run download -- "tags/<タグ名>"
+```
+
 ## 保存先
 
 投稿日ごとのフォルダに保存されます。
@@ -110,6 +125,7 @@ npm run download -- "collections/<コレクション名>"
 | `cookies.txt` | yt-dlp 用の Cookie |
 | `urls.txt` | 投稿 URL の一覧（`https://www.patreon.com/posts/<ID>` 形式） |
 | `collections/<名前>/` | コレクションごとの `urls.txt`・`archive.txt`・動画 |
+| `tags/<タグ名>/` | タグごとの `urls.txt`・`archive.txt`・動画 |
 | `archive.txt` | ダウンロード済みの投稿 ID |
 
 > **注意:** `chrome-profile/` と `cookies.txt` にはログイン情報が含まれます。他人に渡したり、Git にコミットしたりしないでください。

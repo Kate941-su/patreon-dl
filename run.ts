@@ -1,12 +1,19 @@
 // 1〜4 をまとめて実行する
 // 使い方: npm start -- "https://www.patreon.com/<クリエイター名>/posts"
+//         npm start -- "https://www.patreon.com/<クリエイター名>/posts" --tag <タグ名>
 //         npm start -- "https://www.patreon.com/collection/<コレクションID>"
-import { getUrls, usage } from './getUrls';
+import { getUrls, parseArgs, usage } from './getUrls';
 import { download } from './download';
 
-const targetUrl = process.argv[2];
+let targetUrl: string | undefined;
+try {
+  targetUrl = parseArgs(process.argv.slice(2));
+} catch (e) {
+  console.error(e instanceof Error ? e.message : e);
+  process.exit(1);
+}
 if (!targetUrl) {
-  console.error(usage);
+  console.error(usage.replace(/npm run urls/g, 'npm start'));
   process.exit(1);
 }
 
